@@ -4,6 +4,7 @@ from django.shortcuts import render
 from .models import Book, Author, BookInstance, Genre
 from django.http import request, response
 from django.views import generic
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 # Create your views here.
@@ -21,6 +22,9 @@ def index(request):
 
     num_authors = Author.objects.all().count()
 
+    num_visits = request.session.get("num_visits", 0)
+    request.session["num_visits"] = num_visits + 1
+
     context = {
         "num_books": num_books,
         "num_instances": num_instances,
@@ -28,6 +32,7 @@ def index(request):
         "num_authors": num_authors,
         "filtered_book": filtered_book,
         "genre": genre_fiction,
+        "num_visits": num_visits,
     }
 
     return render(request, "index.html", context=context)
@@ -51,7 +56,9 @@ class BookListView(generic.ListView):
     template_name = "books/book_list.html"
 
 
-class BookDetailView(generic.DetailView):
+class BookDetailView(LoginRequiredMixin, generic.DetailView):
+    login_url = "/login/"
+    redirect_field_name = "/books/"
     model = Book
 
 
@@ -63,5 +70,5 @@ class AuthorListView(generic.ListView):
         return Author.objects.all()
 
 
-class AuthorDetailView(generic.DetailView):
+class AuthorDetailView(LoginRequiredMixin, generic.DetailView):
     model = Author
